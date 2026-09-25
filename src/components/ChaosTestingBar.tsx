@@ -16,11 +16,11 @@ export const ChaosTestingBar: React.FC<ChaosTestingBarProps> = ({
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="w-full bg-slate-900 text-slate-200 border-b border-slate-800 text-xs transition-all">
+    <div className="w-full bg-zinc-950 text-zinc-200 border-b border-white/[0.08] text-xs transition-all backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-semibold text-slate-300 flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-emerald-400/50" />
+          <span className="font-semibold text-zinc-300 flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
             <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
             Interview Evaluation Playground: AI Failure Resilience
           </span>
@@ -28,17 +28,17 @@ export const ChaosTestingBar: React.FC<ChaosTestingBarProps> = ({
 
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 font-medium px-2 py-0.5 rounded hover:bg-slate-800 transition-colors"
+          className="flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold px-2.5 py-1 rounded-lg hover:bg-zinc-800/80 transition-colors"
         >
-          <span>{isOpen ? 'Hide Test Scenarios' : 'Test Failure Modes (20% Rubric)'}</span>
+          <span>{isOpen ? 'Close Failure Scenarios' : 'Test Failure Modes (20% Rubric)'}</span>
           {isOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
       </div>
 
       {isOpen && (
-        <div className="border-t border-slate-800/80 bg-slate-950/60 px-4 py-3 animate-slide-up">
+        <div className="border-t border-zinc-800/80 bg-zinc-950/90 px-4 py-3.5 animate-slide-up">
           <div className="max-w-5xl mx-auto">
-            <p className="text-[11px] text-slate-400 mb-2">
+            <p className="text-[11px] text-zinc-400 mb-2.5">
               Click any scenario below to verify that CogniStudy gracefully catches unpredictable AI errors without UI crashes or hangs:
             </p>
 
@@ -46,50 +46,50 @@ export const ChaosTestingBar: React.FC<ChaosTestingBarProps> = ({
               <button
                 onClick={() => onTriggerChaos('malformed')}
                 disabled={isLoading}
-                className="px-2.5 py-1.5 rounded-lg bg-amber-950/70 border border-amber-800/80 text-amber-300 hover:bg-amber-900/80 transition-colors font-mono text-[11px] flex items-center gap-1 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-xl bg-amber-950/60 border border-amber-800/70 text-amber-300 hover:bg-amber-900/60 transition-all font-mono text-[11px] flex items-center gap-1.5 disabled:opacity-40 active:scale-95 shadow-2xs"
               >
-                <Zap className="w-3 h-3" /> Malformed JSON
+                <Zap className="w-3 h-3 text-amber-400" /> Malformed JSON
               </button>
 
               <button
                 onClick={() => onTriggerChaos('wrong_shape')}
                 disabled={isLoading}
-                className="px-2.5 py-1.5 rounded-lg bg-purple-950/70 border border-purple-800/80 text-purple-300 hover:bg-purple-900/80 transition-colors font-mono text-[11px] flex items-center gap-1 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-xl bg-purple-950/60 border border-purple-800/70 text-purple-300 hover:bg-purple-900/60 transition-all font-mono text-[11px] flex items-center gap-1.5 disabled:opacity-40 active:scale-95 shadow-2xs"
               >
-                <Zap className="w-3 h-3" /> Wrong JSON Shape
+                <Zap className="w-3 h-3 text-purple-400" /> Wrong JSON Shape
               </button>
 
               <button
                 onClick={() => onTriggerChaos('empty')}
                 disabled={isLoading}
-                className="px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition-colors font-mono text-[11px] flex items-center gap-1 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700/80 text-zinc-300 hover:bg-zinc-800 transition-all font-mono text-[11px] flex items-center gap-1.5 disabled:opacity-40 active:scale-95 shadow-2xs"
               >
-                <Zap className="w-3 h-3" /> Empty Payload
+                <Zap className="w-3 h-3 text-zinc-400" /> Empty Payload
               </button>
 
               <button
                 onClick={() => onTriggerChaos('slow')}
                 disabled={isLoading}
-                className="px-2.5 py-1.5 rounded-lg bg-blue-950/70 border border-blue-800/80 text-blue-300 hover:bg-blue-900/80 transition-colors font-mono text-[11px] flex items-center gap-1 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-xl bg-blue-950/60 border border-blue-800/70 text-blue-300 hover:bg-blue-900/60 transition-all font-mono text-[11px] flex items-center gap-1.5 disabled:opacity-40 active:scale-95 shadow-2xs"
               >
-                <Zap className="w-3 h-3" /> Slow Response (8s)
+                <Zap className="w-3 h-3 text-blue-400" /> Slow Response (8s)
               </button>
 
               <button
                 onClick={() => onTriggerChaos('server_error')}
                 disabled={isLoading}
-                className="px-2.5 py-1.5 rounded-lg bg-rose-950/70 border border-rose-800/80 text-rose-300 hover:bg-rose-900/80 transition-colors font-mono text-[11px] flex items-center gap-1 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-xl bg-rose-950/60 border border-rose-800/70 text-rose-300 hover:bg-rose-900/60 transition-all font-mono text-[11px] flex items-center gap-1.5 disabled:opacity-40 active:scale-95 shadow-2xs"
               >
-                <Zap className="w-3 h-3" /> 500 Server Error
+                <Zap className="w-3 h-3 text-rose-400" /> 500 Server Error
               </button>
 
               <button
                 onClick={onTriggerRaceCondition}
                 disabled={isLoading}
-                className="px-2.5 py-1.5 rounded-lg bg-indigo-950/70 border border-indigo-800/80 text-indigo-300 hover:bg-indigo-900/80 transition-colors font-mono text-[11px] flex items-center gap-1 disabled:opacity-50"
+                className="px-3 py-1.5 rounded-xl bg-indigo-950/60 border border-indigo-800/70 text-indigo-300 hover:bg-indigo-900/60 transition-all font-mono text-[11px] flex items-center gap-1.5 disabled:opacity-40 active:scale-95 shadow-2xs"
                 title="Fires a slow request followed by a fast request to demonstrate requestId.current protection"
               >
-                <Zap className="w-3 h-3" /> Stale Race Condition
+                <Zap className="w-3 h-3 text-indigo-400" /> Stale Race Condition
               </button>
             </div>
           </div>

@@ -83,51 +83,58 @@ export const PromptInput: React.FC<PromptInputProps> = ({
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      {/* Input Mode Selector Toggle */}
-      <div className="flex p-1.5 bg-slate-200/70 dark:bg-slate-800/80 rounded-2xl mb-4 max-w-md mx-auto shadow-inner">
+      {/* Precision Segmented Mode Selector */}
+      <div className="flex p-1 bg-slate-200/60 dark:bg-zinc-800/80 rounded-2xl mb-4 max-w-md mx-auto border border-slate-200/60 dark:border-white/[0.06] backdrop-blur-md">
         <button
           type="button"
           onClick={() => setMode('topic')}
-          className={`flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+          className={`flex-1 py-2 px-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all duration-200 ${
             mode === 'topic'
-              ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
+              : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
           }`}
         >
-          <Compass className="w-4 h-4" />
+          <Compass className={`w-4 h-4 ${mode === 'topic' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
           <span>Topic Mode</span>
+          {mode === 'topic' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          )}
         </button>
         <button
           type="button"
           onClick={() => setMode('notes')}
-          className={`flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+          className={`flex-1 py-2 px-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all duration-200 ${
             mode === 'notes'
-              ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
+              : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
           }`}
         >
-          <FileText className="w-4 h-4" />
-          <span>Prewritten Notes Mode</span>
+          <FileText className={`w-4 h-4 ${mode === 'notes' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
+          <span>Prewritten Notes</span>
+          {mode === 'notes' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+          )}
         </button>
       </div>
 
-      {/* Mode Description Banner */}
+      {/* Mode Guidance Microcopy */}
       <div className="text-center mb-3">
         {mode === 'topic' ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            <strong className="text-indigo-600 dark:text-indigo-400">Topic Mode:</strong> Enter any subject (Maths, Science, History, Geography, Economics, Arts, Tech). AI will retrieve authentic domain knowledge and build logical flashcards & quizzes.
+          <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+            <span className="font-semibold text-indigo-600 dark:text-indigo-400">Topic Synthesis:</span> Enter any subject (Science, Maths, History, Economics, Art, Tech). AI generates curriculum-aligned cards & quizzes.
           </p>
         ) : (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            <strong className="text-indigo-600 dark:text-indigo-400">Prewritten Notes Mode:</strong> Paste your notes, textbook paragraphs, or syllabus. AI will strictly extract facts and construct questions based exclusively on the provided text.
+          <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
+            <span className="font-semibold text-indigo-600 dark:text-indigo-400">Reading Comprehension:</span> Paste study notes or syllabus text. AI strictly evaluates and questions your provided material.
           </p>
         )}
       </div>
 
+      {/* Studio Input Module */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all p-4">
+        <div className="relative rounded-3xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-card-subtle hover:shadow-glass focus-within:shadow-card-elevated focus-within:border-indigo-500/80 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all duration-200 p-4 sm:p-5">
           <label htmlFor="prompt-input" className="sr-only">
-            {mode === 'topic' ? 'Enter a topic' : 'Paste prewritten study notes'}
+            {mode === 'topic' ? 'Enter a study topic' : 'Paste prewritten study notes'}
           </label>
           <textarea
             id="prompt-input"
@@ -138,55 +145,60 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             disabled={isLoading}
             placeholder={
               mode === 'topic'
-                ? "e.g. 'Mughal Empire Mansabdari System', 'Calculus Integration by Parts', 'Price Elasticity of Demand', 'Plate Tectonics', 'Cellular Respiration'..."
-                : "Paste your raw lecture notes, article excerpts, or textbook text here (AI will strictly formulate questions based on your text)..."
+                ? "e.g. 'Mughal Empire Mansabdari System', 'Calculus Integration by Parts', 'Price Elasticity of Demand', 'Plate Tectonics'..."
+                : "Paste your raw lecture notes, article excerpts, or textbook paragraphs here (AI will strictly formulate questions based on your text)..."
             }
-            rows={mode === 'notes' ? 6 : 4}
-            className="w-full bg-transparent resize-none outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-base leading-relaxed"
+            rows={mode === 'notes' ? 6 : 3}
+            className="w-full bg-transparent resize-none outline-none text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 text-sm sm:text-base leading-relaxed"
           />
 
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-2 border-t border-slate-100 dark:border-slate-800/80">
-            <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
-              <span className="font-mono font-medium">{wordCount} words · {prompt.length} chars</span>
-              {mode === 'notes' && wordCount > 0 && wordCount < 40 && (
-                <span className="text-amber-500 text-[11px]">Tip: Longer notes yield deeper questions</span>
+          {/* Action Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-100 dark:border-zinc-800/80">
+            <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-zinc-500">
+              <span className="font-mono text-[11px] bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md font-medium text-slate-600 dark:text-zinc-300">
+                {wordCount} words · {prompt.length} chars
+              </span>
+              {mode === 'notes' && wordCount > 0 && wordCount < 30 && (
+                <span className="text-amber-500 text-[11px] hidden sm:inline-block">
+                  💡 Tip: Adding more notes yields richer questions
+                </span>
               )}
               {prompt.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setPrompt('')}
-                  className="flex items-center gap-1 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  className="flex items-center gap-1 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors"
                 >
                   <Eraser className="w-3.5 h-3.5" /> Clear
                 </button>
               )}
-              <span className="hidden sm:inline-block">Press Ctrl + Enter to submit</span>
+              <span className="hidden md:inline-block text-[11px]">Press Ctrl + Enter</span>
             </div>
 
             <button
               type="submit"
               disabled={!prompt.trim() || isLoading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white disabled:text-slate-400 font-semibold text-sm rounded-2xl shadow-sm hover:shadow transition-all active:scale-95 disabled:scale-100"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-slate-200 dark:disabled:bg-zinc-800 text-white disabled:text-slate-400 dark:disabled:text-zinc-600 font-semibold text-xs sm:text-sm rounded-2xl shadow-sm hover:shadow-glow-brand transition-all active:scale-[0.98] disabled:scale-100 disabled:shadow-none"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>{isLoading ? 'Synthesizing...' : mode === 'topic' ? 'Generate from Topic' : 'Extract from Notes'}</span>
-              <CornerDownLeft className="w-3.5 h-3.5 opacity-70 hidden sm:inline" />
+              <Sparkles className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>{isLoading ? 'Synthesizing...' : mode === 'topic' ? 'Generate Deck' : 'Extract Knowledge'}</span>
+              <CornerDownLeft className="w-3.5 h-3.5 opacity-60 hidden sm:inline" />
             </button>
           </div>
         </div>
       </form>
 
-      {/* Quick Sample Prompts tailored to current mode */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
-          <Lightbulb className="w-3.5 h-3.5" /> Try a sample ({mode === 'topic' ? 'Topics' : 'Notes'}):
+      {/* Categorized Sample Chips */}
+      <div className="mt-3.5 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-slate-400 dark:text-zinc-500 flex items-center gap-1.5 shrink-0">
+          <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Samples:
         </span>
         {(mode === 'topic' ? TOPIC_SAMPLES : NOTES_SAMPLES).map((sample, idx) => (
           <button
             key={idx}
             type="button"
             onClick={() => handlePickSample(sample.text)}
-            className="text-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/70 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300 transition-all border border-slate-200/60 dark:border-slate-800"
+            className="text-xs px-3 py-1.5 rounded-full bg-slate-100/90 dark:bg-zinc-800/80 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400 text-slate-600 dark:text-zinc-300 transition-all border border-slate-200/50 dark:border-white/[0.04] active:scale-95"
           >
             {sample.label}
           </button>
