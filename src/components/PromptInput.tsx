@@ -83,36 +83,45 @@ export const PromptInput: React.FC<PromptInputProps> = ({
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      {/* Precision Segmented Mode Selector */}
-      <div className="flex p-1 bg-slate-200/60 dark:bg-zinc-800/80 rounded-2xl mb-4 max-w-md mx-auto border border-slate-200/60 dark:border-white/[0.06] backdrop-blur-md">
+      {/* Precision Liquid Sliding Mode Selector */}
+      <div className="relative flex p-1.5 liquid-glass specular-card rounded-2xl mb-4 max-w-md mx-auto shadow-liquid-card dark:shadow-liquid-card-dark overflow-hidden">
+        {/* Animated Liquid Sliding Pill */}
+        <div 
+          className="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-cyan-500/20 border border-indigo-400/40 dark:border-cyan-400/40 rounded-xl transition-all duration-300 ease-out shadow-sm pointer-events-none"
+          style={{
+            left: mode === 'topic' ? '6px' : 'calc(50%)',
+          }}
+        />
+
         <button
           type="button"
           onClick={() => setMode('topic')}
-          className={`flex-1 py-2 px-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all duration-200 ${
+          className={`relative z-10 flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors duration-200 ${
             mode === 'topic'
-              ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
+              ? 'text-indigo-600 dark:text-cyan-300'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
           }`}
         >
-          <Compass className={`w-4 h-4 ${mode === 'topic' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
+          <Compass className={`w-4 h-4 ${mode === 'topic' ? 'text-indigo-600 dark:text-cyan-400' : 'text-slate-400 dark:text-zinc-500'}`} />
           <span>Topic Mode</span>
           {mode === 'topic' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           )}
         </button>
+
         <button
           type="button"
           onClick={() => setMode('notes')}
-          className={`flex-1 py-2 px-3 text-xs sm:text-sm font-semibold rounded-xl flex items-center justify-center gap-2 transition-all duration-200 ${
+          className={`relative z-10 flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors duration-200 ${
             mode === 'notes'
-              ? 'bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-sm font-bold'
+              ? 'text-indigo-600 dark:text-cyan-300'
               : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
           }`}
         >
-          <FileText className={`w-4 h-4 ${mode === 'notes' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-zinc-500'}`} />
+          <FileText className={`w-4 h-4 ${mode === 'notes' ? 'text-indigo-600 dark:text-cyan-400' : 'text-slate-400 dark:text-zinc-500'}`} />
           <span>Prewritten Notes</span>
           {mode === 'notes' && (
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           )}
         </button>
       </div>
@@ -121,18 +130,18 @@ export const PromptInput: React.FC<PromptInputProps> = ({
       <div className="text-center mb-3">
         {mode === 'topic' ? (
           <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
-            <span className="font-semibold text-indigo-600 dark:text-indigo-400">Topic Synthesis:</span> Enter any subject (Science, Maths, History, Economics, Art, Tech). AI generates curriculum-aligned cards & quizzes.
+            <span className="font-bold text-indigo-600 dark:text-cyan-400">Curriculum Synthesis:</span> Enter any syllabus topic (STEM, Humanities, Commerce). AI retrieves authentic domain knowledge into 3D cards & quizzes.
           </p>
         ) : (
           <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-xl mx-auto leading-relaxed">
-            <span className="font-semibold text-indigo-600 dark:text-indigo-400">Reading Comprehension:</span> Paste study notes or syllabus text. AI strictly evaluates and questions your provided material.
+            <span className="font-bold text-indigo-600 dark:text-cyan-400">Reading Comprehension:</span> Paste study notes or syllabus text. AI strictly evaluates and questions your provided material.
           </p>
         )}
       </div>
 
-      {/* Studio Input Module */}
+      {/* Liquid Studio Input Module */}
       <form onSubmit={handleSubmit} className="relative">
-        <div className="relative rounded-3xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 shadow-card-subtle hover:shadow-glass focus-within:shadow-card-elevated focus-within:border-indigo-500/80 focus-within:ring-4 focus-within:ring-indigo-500/10 transition-all duration-200 p-4 sm:p-5">
+        <div className="relative rounded-3xl liquid-glass specular-card shadow-liquid-card dark:shadow-liquid-card-dark focus-within:shadow-liquid-glow focus-within:border-cyan-400/50 transition-all duration-300 p-4 sm:p-5">
           <label htmlFor="prompt-input" className="sr-only">
             {mode === 'topic' ? 'Enter a study topic' : 'Paste prewritten study notes'}
           </label>
@@ -149,17 +158,17 @@ export const PromptInput: React.FC<PromptInputProps> = ({
                 : "Paste your raw lecture notes, article excerpts, or textbook paragraphs here (AI will strictly formulate questions based on your text)..."
             }
             rows={mode === 'notes' ? 6 : 3}
-            className="w-full bg-transparent resize-none outline-none text-slate-800 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 text-sm sm:text-base leading-relaxed"
+            className="w-full bg-transparent resize-none outline-none text-slate-900 dark:text-zinc-100 placeholder:text-slate-400 dark:placeholder:text-zinc-500 text-sm sm:text-base leading-relaxed"
           />
 
           {/* Action Row */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-100 dark:border-zinc-800/80">
-            <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-zinc-500">
-              <span className="font-mono text-[11px] bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md font-medium text-slate-600 dark:text-zinc-300">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-3 border-t border-white/20 dark:border-white/10">
+            <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-zinc-400">
+              <span className="font-mono text-[11px] liquid-glass px-2.5 py-1 rounded-lg font-bold text-slate-700 dark:text-zinc-300 shadow-2xs">
                 {wordCount} words · {prompt.length} chars
               </span>
               {mode === 'notes' && wordCount > 0 && wordCount < 30 && (
-                <span className="text-amber-500 text-[11px] hidden sm:inline-block">
+                <span className="text-amber-500 text-[11px] hidden sm:inline-block font-medium">
                   💡 Tip: Adding more notes yields richer questions
                 </span>
               )}
@@ -167,30 +176,30 @@ export const PromptInput: React.FC<PromptInputProps> = ({
                 <button
                   type="button"
                   onClick={() => setPrompt('')}
-                  className="flex items-center gap-1 hover:text-slate-700 dark:hover:text-zinc-200 transition-colors"
+                  className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-zinc-200 transition-colors font-medium"
                 >
                   <Eraser className="w-3.5 h-3.5" /> Clear
                 </button>
               )}
-              <span className="hidden md:inline-block text-[11px]">Press Ctrl + Enter</span>
+              <span className="hidden md:inline-block text-[11px] font-medium">Press Ctrl + Enter</span>
             </div>
 
             <button
               type="submit"
               disabled={!prompt.trim() || isLoading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 disabled:bg-slate-200 dark:disabled:bg-zinc-800 text-white disabled:text-slate-400 dark:disabled:text-zinc-600 font-semibold text-xs sm:text-sm rounded-2xl shadow-sm hover:shadow-glow-brand transition-all active:scale-[0.98] disabled:scale-100 disabled:shadow-none"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 hover:brightness-110 active:scale-95 disabled:opacity-40 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-liquid-glow transition-all duration-300 disabled:shadow-none"
             >
               <Sparkles className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>{isLoading ? 'Synthesizing...' : mode === 'topic' ? 'Generate Deck' : 'Extract Knowledge'}</span>
-              <CornerDownLeft className="w-3.5 h-3.5 opacity-60 hidden sm:inline" />
+              <span>{isLoading ? 'Synthesizing...' : mode === 'topic' ? 'Generate 3D Deck' : 'Extract Knowledge'}</span>
+              <CornerDownLeft className="w-3.5 h-3.5 opacity-70 hidden sm:inline" />
             </button>
           </div>
         </div>
       </form>
 
-      {/* Categorized Sample Chips */}
-      <div className="mt-3.5 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-slate-400 dark:text-zinc-500 flex items-center gap-1.5 shrink-0">
+      {/* Floating Sample Chips */}
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-slate-400 dark:text-zinc-400 flex items-center gap-1.5 shrink-0">
           <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Samples:
         </span>
         {(mode === 'topic' ? TOPIC_SAMPLES : NOTES_SAMPLES).map((sample, idx) => (
@@ -198,7 +207,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
             key={idx}
             type="button"
             onClick={() => handlePickSample(sample.text)}
-            className="text-xs px-3 py-1.5 rounded-full bg-slate-100/90 dark:bg-zinc-800/80 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/50 dark:hover:text-indigo-400 text-slate-600 dark:text-zinc-300 transition-all border border-slate-200/50 dark:border-white/[0.04] active:scale-95"
+            className="text-xs px-3.5 py-1.5 rounded-full liquid-glass hover:border-cyan-400/50 hover:text-cyan-600 dark:hover:text-cyan-300 text-slate-700 dark:text-zinc-300 transition-all active:scale-95 shadow-2xs font-medium"
           >
             {sample.label}
           </button>

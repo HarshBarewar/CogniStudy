@@ -234,10 +234,36 @@ export const App: React.FC = () => {
     }, 400);
   };
 
+  // Interactive liquid cursor light displacement
+  const [mousePos, setMousePos] = useState<{ x: number; y: number }>({ x: -1000, y: -1000 });
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    return () => window.removeEventListener('pointermove', handlePointerMove);
+  }, []);
+
   return (
-    <div className="relative min-h-screen bg-slate-50/70 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 flex flex-col transition-colors duration-200 selection:bg-indigo-500 selection:text-white overflow-x-hidden">
-      {/* Ambient background aura */}
-      <div className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(99,102,241,0.10),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(99,102,241,0.18),rgba(0,0,0,0))]" />
+    <div className="relative min-h-screen bg-[#fcfdff] dark:bg-[#090b10] text-slate-900 dark:text-zinc-100 flex flex-col transition-colors duration-300 selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+      {/* Interactive Liquid Displacement: Light follows cursor like ripples in water */}
+      <div 
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-70 dark:opacity-85"
+        style={{
+          background: `radial-gradient(650px circle at ${mousePos.x}px ${mousePos.y}px, rgba(99, 102, 241, 0.14), rgba(168, 85, 247, 0.08), rgba(6, 182, 212, 0.05), transparent 75%)`
+        }}
+      />
+
+      {/* Floating Organic Chromatic Liquid Blobs (Flam Spatial Atmosphere) */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        {/* Blob 1: Cyan-Indigo */}
+        <div className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-cyan-400/20 via-indigo-500/25 to-blue-600/15 blur-[120px] animate-blob-1 dark:from-cyan-400/15 dark:via-indigo-500/20" />
+        {/* Blob 2: Violet-Magenta */}
+        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-purple-500/20 via-fuchsia-500/15 to-indigo-600/20 blur-[130px] animate-blob-2 dark:from-purple-500/15 dark:via-fuchsia-500/10" />
+        {/* Blob 3: Neon Indigo-Teal */}
+        <div className="absolute -bottom-40 left-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-indigo-500/20 via-teal-400/15 to-emerald-400/10 blur-[110px] animate-blob-3 dark:from-indigo-500/15 dark:via-teal-400/10" />
+      </div>
 
       {/* Top Chaos Testing Bar for Interviewers */}
       <ChaosTestingBar
@@ -246,24 +272,26 @@ export const App: React.FC = () => {
         isLoading={isLoading}
       />
 
-      {/* Main Floating Glass Navbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-white/[0.06] bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl transition-all">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between relative z-10">
+      {/* Floating Liquid Glass Navbar */}
+      <div className="sticky top-2 z-40 px-4 w-full">
+        <header className="max-w-5xl mx-auto liquid-glass specular-card rounded-3xl h-16 flex items-center justify-between px-5 shadow-liquid-card dark:shadow-liquid-card-dark transition-all">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setStudyPackage(null)}>
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform duration-200">
-              <BrainCircuit className="w-5 h-5" />
+            <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 p-[1.5px] shadow-liquid-glow group-hover:scale-105 transition-transform duration-300">
+              <div className="w-full h-full bg-white dark:bg-zinc-950 rounded-[14px] flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <BrainCircuit className="w-5 h-5 animate-pulse" />
+              </div>
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
-                  CogniStudy <span className="text-indigo-600 dark:text-indigo-400">AI</span>
+                  CogniStudy <span className="bg-gradient-to-r from-indigo-500 to-cyan-400 bg-clip-text text-transparent">AI</span>
                 </h1>
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 font-bold border border-slate-200/60 dark:border-zinc-700/60 shadow-2xs">
-                  STUDIO
+                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-indigo-50/80 dark:bg-indigo-950/80 text-indigo-600 dark:text-cyan-400 font-bold border border-indigo-200/50 dark:border-indigo-800/50 shadow-2xs">
+                  FLUID 3D
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 dark:text-zinc-500 hidden sm:block font-medium">
-                Structured Study Deck & Quiz Engine
+                Spatial Study Deck & Adaptive Quiz Engine
               </p>
             </div>
           </div>
@@ -292,8 +320,8 @@ export const App: React.FC = () => {
               {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 relative z-10">
@@ -358,61 +386,62 @@ export const App: React.FC = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Feature 1 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {/* Feature 1: Floating Holographic Deck */}
               <div 
                 onClick={() => handleGenerate('Mughal Empire Mansabdari System and Administrative Hierarchy under Akbar', 'topic', 'none')}
-                className="group p-5 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-3xl shadow-card-subtle hover:shadow-card-elevated hover:border-indigo-400 dark:hover:border-indigo-600 transition-all cursor-pointer text-left"
+                className="group p-6 liquid-glass specular-card rounded-3xl shadow-liquid-card dark:shadow-liquid-card-dark hover:shadow-liquid-glow transition-all duration-300 cursor-pointer text-left animate-float hover:scale-[1.02] active:scale-[0.98]"
               >
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-3 group-hover:scale-105 transition-transform">
-                  <BookOpen className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500/20 to-cyan-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-600 dark:text-cyan-400 mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                  <BookOpen className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">
-                  Instant 3D Flashcards
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-base mb-1.5 tracking-tight">
+                  3D Holographic Decks
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-3">
-                  Spaced repetition with 3D flip physics, speech audio pronunciation, and mastery status tracking.
+                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  Interactive gyroscopic 3D cards that tilt with cursor movement, speech audio, and progressive mastery tags.
                 </p>
-                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 group-hover:underline">
-                  Launch sample deck →
+                <span className="text-xs font-bold text-indigo-600 dark:text-cyan-400 flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                  Launch 3D Deck →
                 </span>
               </div>
 
-              {/* Feature 2 */}
+              {/* Feature 2: Floating Adaptive Logic Quiz */}
               <div 
                 onClick={() => handleGenerate('Integration by Parts and Definite Integrals in Calculus', 'topic', 'none')}
-                className="group p-5 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-3xl shadow-card-subtle hover:shadow-card-elevated hover:border-indigo-400 dark:hover:border-indigo-600 transition-all cursor-pointer text-left"
+                className="group p-6 liquid-glass specular-card rounded-3xl shadow-liquid-card dark:shadow-liquid-card-dark hover:shadow-liquid-glow transition-all duration-300 cursor-pointer text-left animate-float-slow hover:scale-[1.02] active:scale-[0.98]"
               >
-                <div className="w-10 h-10 rounded-2xl bg-violet-50 dark:bg-violet-950/60 flex items-center justify-center text-violet-600 dark:text-violet-400 mb-3 group-hover:scale-105 transition-transform">
-                  <BrainCircuit className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-500/20 to-pink-500/20 border border-purple-400/30 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-4 group-hover:scale-110 group-hover:-rotate-3 transition-transform">
+                  <BrainCircuit className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">
-                  Adaptive Logic Quizzes
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-base mb-1.5 tracking-tight">
+                  Adaptive Quiz Engine
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-3">
-                  Interactive MCQ drilling with detailed rationale breakdowns and dedicated re-testing of missed questions.
+                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  Fluid MCQ testing with real-time concept rationales and a dedicated loop to re-test only missed questions.
                 </p>
-                <span className="text-xs font-semibold text-violet-600 dark:text-violet-400 flex items-center gap-1 group-hover:underline">
-                  Test math quiz →
+                <span className="text-xs font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                  Test Adaptive Quiz →
                 </span>
               </div>
 
-              {/* Feature 3 */}
+              {/* Feature 3: Sub-10s Fluid Pipeline */}
               <div 
                 onClick={() => handleGenerate('Price Elasticity of Demand and Market Equilibrium in Economics', 'topic', 'none')}
-                className="group p-5 bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 rounded-3xl shadow-card-subtle hover:shadow-card-elevated hover:border-indigo-400 dark:hover:border-indigo-600 transition-all cursor-pointer text-left"
+                className="group p-6 liquid-glass specular-card rounded-3xl shadow-liquid-card dark:shadow-liquid-card-dark hover:shadow-liquid-glow transition-all duration-300 cursor-pointer text-left animate-float hover:scale-[1.02] active:scale-[0.98]"
+                style={{ animationDelay: '1.5s' }}
               >
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 mb-3 group-hover:scale-105 transition-transform">
-                  <Sparkles className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-emerald-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-600 dark:text-emerald-400 mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                  <Sparkles className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm mb-1">
-                  Sub-10s AI Pipeline
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-base mb-1.5 tracking-tight">
+                  Sub-10s Fluid SLA
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-3">
-                  Strict JSON schema validation, timeout circuit-breaker, and race-condition guards for rock-solid UX.
+                <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-4">
+                  Fail-safe circuit breaker and race-condition guards ensuring instantaneous, guaranteed study materials.
                 </p>
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 group-hover:underline">
-                  Synthesize economics →
+                <span className="text-xs font-bold text-cyan-600 dark:text-emerald-400 flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                  Synthesize Syllabus →
                 </span>
               </div>
             </div>
