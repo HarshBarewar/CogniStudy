@@ -1,7 +1,7 @@
 import { StudyPackage, AppError, GenerateOptions } from '../types/result';
 import { validateAndParseResult } from './validateResult';
 
-const API_TIMEOUT_MS = 30000; // 30 seconds max wait for LLM inference
+const API_TIMEOUT_MS = 12000; // 12 seconds max wait - server responds in < 5s
 
 export interface ApiResponse {
   data: StudyPackage | null;

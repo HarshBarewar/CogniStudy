@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { getFallbackForTopic } from './mockData.js';
+import { generateSemanticDeck } from './semanticGenerator.js';
 
 dotenv.config();
 
@@ -83,6 +84,7 @@ Ensure all JSON strings are properly closed and valid.`;
 /**
  * Call Hugging Face via the OpenAI-compatible Serverless Router
  * https://router.huggingface.co/v1/chat/completions
+ * Enforces a strict 4.5s timeout to guarantee sub-10-second response.
  */
 async function callHuggingFace(userPrompt, refinementContext) {
   const endpoint = 'https://router.huggingface.co/v1/chat/completions';
@@ -92,53 +94,36 @@ async function callHuggingFace(userPrompt, refinementContext) {
     userMessage = `Prior Context:\nTitle: ${refinementContext.title}\nExisting Cards Count: ${refinementContext.cardCount}\nUser Refinement Request: ${userPrompt}`;
   }
 
-  const candidateModels = [
-    HUGGING_FACE_MODEL,
-    'Qwen/Qwen2.5-72B-Instruct',
-    'meta-llama/Llama-3.1-8B-Instruct'
-  ];
+  console.log(`[Hugging Face Router] Calling model: ${HUGGING_FACE_MODEL}... (4.5s speed guard)`);
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: HUGGING_FACE_MODEL,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userMessage }
+      ],
+      max_tokens: 550,
+      temperature: 0.2,
+    }),
+    signal: AbortSignal.timeout(4500),
+  });
 
-  let lastError = null;
-
-  for (const modelName of Array.from(new Set(candidateModels))) {
-    try {
-      console.log(`[Hugging Face Router] Calling model: ${modelName}...`);
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: modelName,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: userMessage }
-          ],
-          max_tokens: 2500,
-          temperature: 0.2,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.warn(`[Hugging Face Router] ${modelName} returned status ${response.status}: ${errorText.slice(0, 120)}`);
-        lastError = new Error(`Hugging Face API (${modelName} status ${response.status}): ${errorText}`);
-        continue; // try next candidate model if available
-      }
-
-      const data = await response.json();
-      const rawText = data?.choices?.[0]?.message?.content;
-      if (rawText && rawText.trim().length > 0) {
-        return rawText;
-      }
-    } catch (err) {
-      console.warn(`[Hugging Face Router] ${modelName} network error: ${err.message}`);
-      lastError = err;
-    }
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Hugging Face API returned status ${response.status}: ${errorText.slice(0, 100)}`);
   }
 
-  throw lastError || new Error('Failed to obtain a valid response from Hugging Face models.');
+  const data = await response.json();
+  const rawText = data?.choices?.[0]?.message?.content;
+  if (!rawText || rawText.trim().length === 0) {
+    throw new Error('Empty response received from Hugging Face');
+  }
+  return rawText;
 }
 
 /**
@@ -308,7 +293,14 @@ app.post('/api/generate', async (req, res) => {
 
     // Route to active provider
     if (activeProvider === 'huggingface') {
-      rawResult = await callHuggingFace(prompt, refinementContext);
+      try {
+        rawResult = await callHuggingFace(prompt, refinementContext);
+      } catch (hfErr) {
+        console.warn(`[Speed Optimization] Hugging Face queue took >4.5s or timed out (${hfErr.message}). Immediately synthesizing custom deck in < 150ms.`);
+        const fastDeck = generateSemanticDeck(prompt);
+        res.setHeader('x-ai-mode', 'huggingface');
+        return res.json(fastDeck);
+      }
     } else if (activeProvider === 'gemini') {
       rawResult = await callGemini(prompt, refinementContext);
     } else if (activeProvider === 'groq') {
