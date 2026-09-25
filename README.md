@@ -13,7 +13,7 @@ Everything runs with a single command. The backend proxy and Vite frontend start
 # 1. Clone the repository and install dependencies
 npm install
 
-# 2. (Optional) Configure an AI Provider API Key in .env
+# 2. (Optional) Configure your Hugging Face API key in .env
 # By default, CogniStudy includes a built-in Mock Fallback Provider,
 # meaning it runs out-of-the-box even without an API key!
 cp .env.example .env
@@ -66,7 +66,7 @@ CogniStudy addresses every one of these failure modes explicitly, preventing UI 
                                │
 ┌──────────────────────────────┴──────────────────────────────┐
 │             Client API Gateway (src/lib/api.ts)             │
-│  - 15s AbortController timeout protection                  │
+│  - 30s AbortController timeout protection                  │
 │  - Passes Chaos Mode simulation flags                       │
 │  - Translates network failures into friendly AppErrors      │
 └──────────────────────────────▲──────────────────────────────┘
@@ -74,8 +74,9 @@ CogniStudy addresses every one of these failure modes explicitly, preventing UI 
 ┌──────────────────────────────┴──────────────────────────────┐
 │           Node.js / Express Proxy (server/index.js)         │
 │  - Shields API key from browser bundles                     │
-│  - Auto-routes to Gemini 1.5 Flash, Groq, or OpenAI         │
-│  - Fallback Mock Provider if no API key is provided         │
+│  - Routes to Hugging Face (meta-llama/Llama-3.1-8B-Instruct) │
+│  - Multi-model fallback (Qwen/Qwen2.5-72B-Instruct)         │
+│  - Generates live flashcards & quizzes for ANY user topic   │
 └─────────────────────────────────────────────────────────────┘
 ```
 

@@ -45,27 +45,50 @@ export function validateAndParseResult(raw: unknown): {
       };
     }
 
-    try {
-      // Clean up common LLM artifacts: ```json ... ``` or loose backticks
-      const sanitized = trimmed
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
+    // Clean up common LLM artifacts: ```json ... ``` or loose backticks
+    const sanitized = trimmed
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
 
+    try {
       parsed = JSON.parse(sanitized);
     } catch (parseErr) {
-      return {
-        data: null,
-        error: {
-          type: 'MALFORMED_JSON',
-          title: 'Malformed JSON Output',
-          message: 'The AI returned unparseable text instead of valid JSON.',
-          details: (parseErr as Error).message,
-          rawPayload: trimmed.slice(0, 300) + (trimmed.length > 300 ? '...' : ''),
-          isRetryable: true,
-        },
-      };
+      let recovered = false;
+      // Resilient Partial Recovery: If payload was cut off by token limits, attempt salvage
+      try {
+        const lastValidBrace = sanitized.lastIndexOf('}');
+        if (lastValidBrace > 0) {
+          let repaired = sanitized.slice(0, lastValidBrace + 1);
+          const openBrackets = (repaired.match(/\[/g) || []).length;
+          const closeBrackets = (repaired.match(/\]/g) || []).length;
+          for (let b = 0; b < openBrackets - closeBrackets; b++) repaired += ']';
+          const openBraces = (repaired.match(/\{/g) || []).length;
+          const closeBraces = (repaired.match(/\}/g) || []).length;
+          for (let b = 0; b < openBraces - closeBraces; b++) repaired += '}';
+          
+          parsed = JSON.parse(repaired);
+          recovered = true;
+          console.info('[validateResult] Successfully recovered partially truncated JSON payload.');
+        }
+      } catch {
+        // Fall through to error
+      }
+
+      if (!recovered) {
+        return {
+          data: null,
+          error: {
+            type: 'MALFORMED_JSON',
+            title: 'Malformed JSON Output',
+            message: 'The AI returned unparseable text instead of valid JSON.',
+            details: (parseErr as Error).message,
+            rawPayload: trimmed.slice(0, 300) + (trimmed.length > 300 ? '...' : ''),
+            isRetryable: true,
+          },
+        };
+      }
     }
   }
 

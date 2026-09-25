@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { getFallbackForTopic, mockStudyPackages } from './mockData.js';
+import { getFallbackForTopic } from './mockData.js';
 
 dotenv.config();
 
@@ -12,19 +12,32 @@ app.use(cors());
 app.use(express.json());
 
 // Identify available provider
+const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY || process.env.HF_API_KEY;
+const HUGGING_FACE_MODEL = process.env.HUGGING_FACE_MODEL || 'meta-llama/Llama-3.1-8B-Instruct';
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const activeProvider = GEMINI_API_KEY ? 'gemini' : (GROQ_API_KEY ? 'groq' : (OPENAI_API_KEY ? 'openai' : 'mock'));
+let activeProvider = 'mock';
+if (HUGGING_FACE_API_KEY) {
+  activeProvider = 'huggingface';
+} else if (GEMINI_API_KEY) {
+  activeProvider = 'gemini';
+} else if (GROQ_API_KEY) {
+  activeProvider = 'groq';
+} else if (OPENAI_API_KEY) {
+  activeProvider = 'openai';
+}
 
-console.log(`[CogniStudy Server] Initialized. Active AI provider: ${activeProvider.toUpperCase()}`);
+console.log(`[CogniStudy Server] Initialized. Active AI provider: ${activeProvider.toUpperCase()} (${activeProvider === 'huggingface' ? HUGGING_FACE_MODEL : 'default'})`);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
     provider: activeProvider,
+    model: activeProvider === 'huggingface' ? HUGGING_FACE_MODEL : undefined,
     timestamp: new Date().toISOString(),
   });
 });
@@ -62,7 +75,71 @@ Required JSON Schema:
   ]
 }
 
-Provide between 4 to 8 flashcards and between 3 to 6 quiz questions. Ensure quality, accuracy, and pedagogical depth.`;
+Provide between 4 to 6 flashcards and exactly 3 quiz questions.
+Keep flashcard answers (back) concise (1-2 clear sentences).
+Keep quiz explanations concise (1 clear sentence).
+Ensure all JSON strings are properly closed and valid.`;
+
+/**
+ * Call Hugging Face via the OpenAI-compatible Serverless Router
+ * https://router.huggingface.co/v1/chat/completions
+ */
+async function callHuggingFace(userPrompt, refinementContext) {
+  const endpoint = 'https://router.huggingface.co/v1/chat/completions';
+  
+  let userMessage = `Topic / Notes:\n${userPrompt}`;
+  if (refinementContext) {
+    userMessage = `Prior Context:\nTitle: ${refinementContext.title}\nExisting Cards Count: ${refinementContext.cardCount}\nUser Refinement Request: ${userPrompt}`;
+  }
+
+  const candidateModels = [
+    HUGGING_FACE_MODEL,
+    'Qwen/Qwen2.5-72B-Instruct',
+    'meta-llama/Llama-3.1-8B-Instruct'
+  ];
+
+  let lastError = null;
+
+  for (const modelName of Array.from(new Set(candidateModels))) {
+    try {
+      console.log(`[Hugging Face Router] Calling model: ${modelName}...`);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userMessage }
+          ],
+          max_tokens: 2500,
+          temperature: 0.2,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`[Hugging Face Router] ${modelName} returned status ${response.status}: ${errorText.slice(0, 120)}`);
+        lastError = new Error(`Hugging Face API (${modelName} status ${response.status}): ${errorText}`);
+        continue; // try next candidate model if available
+      }
+
+      const data = await response.json();
+      const rawText = data?.choices?.[0]?.message?.content;
+      if (rawText && rawText.trim().length > 0) {
+        return rawText;
+      }
+    } catch (err) {
+      console.warn(`[Hugging Face Router] ${modelName} network error: ${err.message}`);
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error('Failed to obtain a valid response from Hugging Face models.');
+}
 
 /**
  * Call Gemini 1.5 Flash via REST
@@ -101,7 +178,7 @@ async function callGemini(userPrompt, refinementContext) {
 }
 
 /**
- * Call Groq (llama-3.3-70b-versatile) via REST
+ * Call Groq via REST
  */
 async function callGroq(userPrompt, refinementContext) {
   const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
@@ -140,7 +217,7 @@ async function callGroq(userPrompt, refinementContext) {
 }
 
 /**
- * Call OpenAI (gpt-4o-mini) via REST
+ * Call OpenAI via REST
  */
 async function callOpenAI(userPrompt, refinementContext) {
   const endpoint = 'https://api.openai.com/v1/chat/completions';
@@ -187,13 +264,11 @@ app.post('/api/generate', async (req, res) => {
     console.log(`[Chaos Mode Triggered]: ${chaosMode}`);
 
     if (chaosMode === 'malformed') {
-      // Intentionally returns invalid JSON syntax
       res.setHeader('Content-Type', 'application/json');
       return res.status(200).send('{"title": "Broken AI Payload", "cards": [{"front": "Unterminated string');
     }
 
     if (chaosMode === 'wrong_shape') {
-      // Valid JSON but completely missing required 'cards' and 'quiz' shape
       return res.status(200).json({
         success: true,
         unexpectedKey: "This payload does not conform to the StudyPackage interface.",
@@ -202,7 +277,6 @@ app.post('/api/generate', async (req, res) => {
     }
 
     if (chaosMode === 'empty') {
-      // Empty collections
       return res.status(200).json({
         title: "Empty Subject",
         summary: "No study materials generated.",
@@ -212,7 +286,6 @@ app.post('/api/generate', async (req, res) => {
     }
 
     if (chaosMode === 'slow') {
-      // Simulates an 8-second slow upstream response
       await new Promise(resolve => setTimeout(resolve, 8000));
     }
 
@@ -234,19 +307,19 @@ app.post('/api/generate', async (req, res) => {
     let rawResult = '';
 
     // Route to active provider
-    if (activeProvider === 'gemini') {
+    if (activeProvider === 'huggingface') {
+      rawResult = await callHuggingFace(prompt, refinementContext);
+    } else if (activeProvider === 'gemini') {
       rawResult = await callGemini(prompt, refinementContext);
     } else if (activeProvider === 'groq') {
       rawResult = await callGroq(prompt, refinementContext);
     } else if (activeProvider === 'openai') {
       rawResult = await callOpenAI(prompt, refinementContext);
     } else {
-      // MOCK FALLBACK MODE:
-      // Provide realistic simulated latency (600ms) and return high-fidelity mock data
+      // MOCK FALLBACK MODE
       await new Promise(resolve => setTimeout(resolve, 600));
       const fallback = getFallbackForTopic(prompt);
       
-      // If user typed something custom, tailor title dynamically
       const customized = {
         ...fallback,
         title: prompt.length < 50 ? prompt.trim() : fallback.title,
@@ -260,7 +333,6 @@ app.post('/api/generate', async (req, res) => {
     // Try parsing raw string
     let parsed;
     try {
-      // Remove any accidental markdown backticks if provider slipped them in
       const cleaned = rawResult.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
       parsed = JSON.parse(cleaned);
     } catch {
@@ -273,6 +345,7 @@ app.post('/api/generate', async (req, res) => {
     parsed.generatedAt = new Date().toISOString();
 
     res.setHeader('x-ai-mode', activeProvider);
+    res.setHeader('x-ai-model', HUGGING_FACE_MODEL);
     return res.json(parsed);
 
   } catch (err) {
