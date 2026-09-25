@@ -19,7 +19,7 @@ npm install
 cp .env.example .env
 
 # 3. Start both the Backend Proxy (Port 3001) and Frontend (Port 5173)
-npm start
+npm run dev
 ```
 
 Visit **`http://localhost:5173`** in your browser.
