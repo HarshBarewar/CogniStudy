@@ -9,6 +9,7 @@ import {
   Volume2
 } from 'lucide-react';
 import { Flashcard } from '../types/result';
+import { playCardFlip, playWaterDrop, playGlassChime } from '../utils/soundEffects';
 
 interface FlashcardDeckProps {
   cards: Flashcard[];
@@ -30,9 +31,9 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    // Calculate tilt angles (max +/- 10 degrees)
-    const rotateX = ((y - centerY) / centerY) * -10;
-    const rotateY = ((x - centerX) / centerX) * 10;
+    // Calculate tilt angles (max +/- 12 degrees)
+    const rotateX = ((y - centerY) / centerY) * -12;
+    const rotateY = ((x - centerX) / centerX) * 12;
     setTilt({
       x: rotateX,
       y: rotateY,
@@ -57,22 +58,26 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
   const currentCard = deck[currentIndex];
 
   const handleNext = useCallback(() => {
+    playWaterDrop();
     setIsFlipped(false);
     setShowHint(false);
     setCurrentIndex((prev) => (prev + 1) % deck.length);
   }, [deck.length]);
 
   const handlePrev = useCallback(() => {
+    playWaterDrop();
     setIsFlipped(false);
     setShowHint(false);
     setCurrentIndex((prev) => (prev - 1 + deck.length) % deck.length);
   }, [deck.length]);
 
   const handleFlip = useCallback(() => {
+    playCardFlip();
     setIsFlipped((prev) => !prev);
   }, []);
 
   const handleShuffle = () => {
+    playWaterDrop();
     const shuffled = [...deck].sort(() => Math.random() - 0.5);
     setDeck(shuffled);
     setCurrentIndex(0);
@@ -174,19 +179,19 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
         >
           {/* FRONT SIDE */}
           <div className="absolute inset-0 backface-hidden w-full h-full liquid-glass specular-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between overflow-hidden">
-            {/* Dynamic Specular Light Glare (Holographic reflection) */}
+            {/* Dynamic Specular Light Glare (Prismatic Holographic reflection) */}
             <div 
               className="pointer-events-none absolute inset-0 rounded-3xl transition-opacity duration-200"
               style={{
-                opacity: tilt.isHovering ? 0.35 : 0.1,
-                background: `radial-gradient(400px circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.7) 0%, rgba(99,102,241,0.1) 40%, transparent 80%)`
+                opacity: tilt.isHovering ? 0.45 : 0.12,
+                background: `radial-gradient(420px circle at ${tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.55) 0%, rgba(56,189,248,0.22) 25%, rgba(168,85,247,0.18) 50%, transparent 75%)`
               }}
             />
 
             {/* Subtle floating chromatic orb in card background */}
-            <div className="pointer-events-none absolute -top-12 -right-12 w-48 h-48 bg-gradient-to-br from-indigo-500/10 to-cyan-400/10 rounded-full blur-2xl" />
+            <div className="pointer-events-none absolute -top-12 -right-12 w-48 h-48 bg-gradient-to-br from-indigo-500/15 to-cyan-400/15 rounded-full blur-2xl" />
 
-            <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center justify-between relative z-10 transition-transform duration-200" style={{ transform: tilt.isHovering ? 'translateZ(38px)' : 'none' }}>
               <span className="text-xs uppercase tracking-wider font-extrabold px-3.5 py-1 rounded-full bg-gradient-to-r from-indigo-500/15 to-cyan-500/15 text-indigo-600 dark:text-cyan-400 border border-indigo-400/30 flex items-center gap-1.5 shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
                 {currentCard.category || 'Core Concept'}
@@ -207,7 +212,7 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
               </div>
             </div>
 
-            <div className="my-auto text-center px-2 sm:px-6 relative z-10">
+            <div className="my-auto text-center px-2 sm:px-6 relative z-10 transition-transform duration-200" style={{ transform: tilt.isHovering ? 'translateZ(26px)' : 'none' }}>
               <p className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white leading-snug tracking-tight">
                 {currentCard.front}
               </p>
@@ -231,7 +236,7 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
               )}
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-400 dark:text-zinc-400 pt-3 border-t border-white/20 dark:border-white/10 relative z-10 font-medium">
+            <div className="flex items-center justify-between text-xs text-slate-400 dark:text-zinc-400 pt-3 border-t border-white/20 dark:border-white/10 relative z-10 font-medium transition-transform duration-200" style={{ transform: tilt.isHovering ? 'translateZ(18px)' : 'none' }}>
               <span className="flex items-center gap-1.5">
                 <RotateCw className="w-3.5 h-3.5 text-indigo-500 animate-spin-slow" /> Click or Space to flip
               </span>
@@ -245,12 +250,12 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
             <div 
               className="pointer-events-none absolute inset-0 rounded-3xl transition-opacity duration-200"
               style={{
-                opacity: tilt.isHovering ? 0.3 : 0.08,
-                background: `radial-gradient(400px circle at ${100 - tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.4) 0%, rgba(168,85,247,0.15) 50%, transparent 80%)`
+                opacity: tilt.isHovering ? 0.38 : 0.08,
+                background: `radial-gradient(420px circle at ${100 - tilt.glareX}% ${tilt.glareY}%, rgba(255,255,255,0.48) 0%, rgba(168,85,247,0.2) 40%, transparent 80%)`
               }}
             />
 
-            <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center justify-between relative z-10 transition-transform duration-200" style={{ transform: tilt.isHovering ? 'translateZ(30px)' : 'none' }}>
               <span className="text-xs uppercase tracking-wider font-extrabold px-3.5 py-1 rounded-full bg-white/10 text-cyan-200 backdrop-blur-md border border-white/15 flex items-center gap-1.5 shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 Explanation & Rationale
@@ -264,13 +269,13 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
               </button>
             </div>
 
-            <div className="my-auto text-center px-2 sm:px-6 overflow-y-auto max-h-48 py-2 relative z-10">
+            <div className="my-auto text-center px-2 sm:px-6 overflow-y-auto max-h-48 py-2 relative z-10 transition-transform duration-200" style={{ transform: tilt.isHovering ? 'translateZ(24px)' : 'none' }}>
               <p className="text-base sm:text-lg font-medium text-indigo-50 leading-relaxed">
                 {currentCard.back}
               </p>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-indigo-200/80 pt-3 border-t border-white/10 relative z-10 font-medium">
+            <div className="flex items-center justify-between text-xs text-indigo-200/80 pt-3 border-t border-white/10 relative z-10 font-medium transition-transform duration-200" style={{ transform: tilt.isHovering ? 'translateZ(18px)' : 'none' }}>
               <span className="flex items-center gap-1.5">
                 <RotateCw className="w-3.5 h-3.5 text-cyan-400" /> Click or Space to flip back
               </span>
@@ -292,7 +297,10 @@ export const FlashcardDeck: React.FC<FlashcardDeckProps> = ({ cards, onToggleMas
 
         {/* Mastered Toggle */}
         <button
-          onClick={() => onToggleMastery(currentCard.id)}
+          onClick={() => {
+            playGlassChime();
+            onToggleMastery(currentCard.id);
+          }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shadow-xs active:scale-95 ${
             currentCard.mastered
               ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/25'

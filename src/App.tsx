@@ -5,7 +5,9 @@ import {
   History, 
   Moon, 
   Sun, 
-  BookOpen
+  BookOpen,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { StudyPackage, AppError, ChaosMode, InputMode } from './types/result';
 import { generateStudyPackage } from './lib/api';
@@ -15,6 +17,14 @@ import { LoadingState } from './components/LoadingState';
 import { ErrorState } from './components/ErrorState';
 import { SessionHistory } from './components/SessionHistory';
 import { ChaosTestingBar } from './components/ChaosTestingBar';
+import { FluidCanvas } from './components/FluidCanvas';
+import { 
+  getSoundEnabled, 
+  setSoundEnabled, 
+  playWaterDrop, 
+  playFluidWave, 
+  playGlassChime 
+} from './utils/soundEffects';
 
 const STORAGE_KEY_SESSIONS = 'cognistudy_saved_sessions_v1';
 const STORAGE_KEY_THEME = 'cognistudy_theme_v1';
@@ -45,6 +55,14 @@ export const App: React.FC = () => {
     }
   });
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [soundActive, setSoundActive] = useState<boolean>(() => getSoundEnabled());
+
+  const handleToggleSound = () => {
+    const next = !soundActive;
+    setSoundActive(next);
+    setSoundEnabled(next);
+    if (next) playWaterDrop();
+  };
 
   // Active AbortController for in-flight requests
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -85,6 +103,9 @@ export const App: React.FC = () => {
     // 1. Guard against stale responses: increment request counter
     const currentId = ++requestId.current;
     
+    // Play wave swoosh on initiation
+    playFluidWave();
+
     // Abort previous in-flight request if any
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -119,6 +140,7 @@ export const App: React.FC = () => {
       }
 
       if (response.data) {
+        playGlassChime();
         setStudyPackage(response.data);
         setIsMockMode(response.isMock);
 
@@ -247,6 +269,9 @@ export const App: React.FC = () => {
 
   return (
     <div className="relative min-h-screen bg-[#fcfdff] dark:bg-[#090b10] text-slate-900 dark:text-zinc-100 flex flex-col transition-colors duration-300 selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+      {/* Interactive Water Ripple Canvas & Particle Caustics (Flam Fluid Physics) */}
+      <FluidCanvas />
+
       {/* Interactive Liquid Displacement: Light follows cursor like ripples in water */}
       <div 
         className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300 opacity-70 dark:opacity-85"
@@ -275,16 +300,16 @@ export const App: React.FC = () => {
       {/* Floating Liquid Glass Navbar */}
       <div className="sticky top-2 z-40 px-4 w-full">
         <header className="max-w-5xl mx-auto liquid-glass specular-card rounded-3xl h-16 flex items-center justify-between px-5 shadow-liquid-card dark:shadow-liquid-card-dark transition-all">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setStudyPackage(null)}>
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { playWaterDrop(); setStudyPackage(null); }}>
             <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-cyan-400 p-[1.5px] shadow-liquid-glow group-hover:scale-105 transition-transform duration-300">
-              <div className="w-full h-full bg-white dark:bg-zinc-950 rounded-[14px] flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <div className="w-full h-full bg-white dark:bg-zinc-950 rounded-[14px] flex items-center justify-center text-indigo-600 dark:text-cyan-400">
                 <BrainCircuit className="w-5 h-5 animate-pulse" />
               </div>
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
-                  CogniStudy <span className="bg-gradient-to-r from-indigo-500 to-cyan-400 bg-clip-text text-transparent">AI</span>
+                  CogniStudy <span className="bg-gradient-to-r from-indigo-500 via-purple-400 to-cyan-400 bg-clip-text text-transparent">AI</span>
                 </h1>
                 <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-indigo-50/80 dark:bg-indigo-950/80 text-indigo-600 dark:text-cyan-400 font-bold border border-indigo-200/50 dark:border-indigo-800/50 shadow-2xs">
                   FLUID 3D
@@ -296,16 +321,29 @@ export const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            {/* Spatial Audio Toggle */}
+            <button
+              onClick={handleToggleSound}
+              className={`p-2.5 rounded-2xl transition-all active:scale-90 border ${
+                soundActive 
+                  ? 'text-cyan-500 hover:text-cyan-400 bg-cyan-500/10 border-cyan-500/30 shadow-liquid-glow' 
+                  : 'text-slate-400 dark:text-zinc-500 hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 border-transparent'
+              }`}
+              title={soundActive ? 'Spatial Audio: Enabled (Click to Mute)' : 'Spatial Audio: Muted (Click to Enable)'}
+            >
+              {soundActive ? <Volume2 className="w-4 h-4 animate-pulse" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+
             {/* Saved Sessions Button */}
             <button
-              onClick={() => setIsHistoryOpen(true)}
+              onClick={() => { playWaterDrop(); setIsHistoryOpen(true); }}
               className="flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-semibold text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-all border border-transparent hover:border-slate-200/60 dark:hover:border-zinc-700/60"
             >
               <History className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
               <span className="hidden sm:inline">Sessions</span>
               {savedSessions.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 text-[10px] font-mono font-bold border border-indigo-100 dark:border-indigo-900/60">
+                <span className="px-1.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-cyan-400 text-[10px] font-mono font-bold border border-indigo-100 dark:border-indigo-900/60">
                   {savedSessions.length}
                 </span>
               )}
@@ -313,7 +351,7 @@ export const App: React.FC = () => {
 
             {/* Dark Mode Toggle */}
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={() => { playWaterDrop(); setDarkMode(!darkMode); }}
               className="p-2.5 rounded-2xl text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100/80 dark:hover:bg-zinc-800/80 transition-all active:scale-90 border border-transparent hover:border-slate-200/60 dark:hover:border-zinc-700/60"
               title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >

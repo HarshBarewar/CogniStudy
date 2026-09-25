@@ -12,6 +12,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { QuizQuestion } from '../types/result';
+import { playWaterDrop, playGlassChime, playSoftThud, playFluidWave } from '../utils/soundEffects';
 
 interface QuizViewProps {
   questions: QuizQuestion[];
@@ -48,6 +49,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ questions }) => {
 
   const handleSelectOption = (index: number) => {
     if (isAnswerSubmitted) return;
+    playWaterDrop();
     setSelectedOption(index);
   };
 
@@ -56,6 +58,12 @@ export const QuizView: React.FC<QuizViewProps> = ({ questions }) => {
 
     const isCorrect = selectedOption === currentQ.correctIndex;
     setIsAnswerSubmitted(true);
+
+    if (isCorrect) {
+      playGlassChime();
+    } else {
+      playSoftThud();
+    }
 
     setAnswers((prev) => ({
       ...prev,
@@ -68,6 +76,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ questions }) => {
   }, [selectedOption, isAnswerSubmitted, currentQ]);
 
   const handleNextQuestion = () => {
+    playWaterDrop();
     if (currentIndex < activeQuestions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
@@ -78,6 +87,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ questions }) => {
       const correctCount = Object.values(answers).filter((a) => a.isCorrect).length + (selectedOption === currentQ?.correctIndex ? 1 : 0);
       const totalCount = activeQuestions.length;
       if (correctCount / totalCount >= 0.7) {
+        playGlassChime();
         confetti({
           particleCount: 80,
           spread: 70,
@@ -89,6 +99,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ questions }) => {
 
   // Dedicated "Re-test Wrong Answers" feature
   const handleRetestWrongAnswers = () => {
+    playFluidWave();
     const wrongQuestionIds = Object.values(answers)
       .filter((a) => !a.isCorrect)
       .map((a) => a.questionId);
@@ -110,6 +121,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ questions }) => {
   };
 
   const handleRestartFullQuiz = () => {
+    playFluidWave();
     setActiveQuestions(questions);
     setCurrentIndex(0);
     setSelectedOption(null);

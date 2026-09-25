@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Sparkles, CornerDownLeft, Eraser, Lightbulb, FileText, Compass } from 'lucide-react';
 import { InputMode } from '../types/result';
+import { playWaterDrop } from '../utils/soundEffects';
 
 interface PromptInputProps {
   onSubmit: (prompt: string, mode: InputMode) => void;
@@ -73,6 +74,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
   };
 
   const handlePickSample = (text: string) => {
+    playWaterDrop();
     setPrompt(text);
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -95,7 +97,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
 
         <button
           type="button"
-          onClick={() => setMode('topic')}
+          onClick={() => { playWaterDrop(); setMode('topic'); }}
           className={`relative z-10 flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors duration-200 ${
             mode === 'topic'
               ? 'text-indigo-600 dark:text-cyan-300'
@@ -111,7 +113,7 @@ export const PromptInput: React.FC<PromptInputProps> = ({
 
         <button
           type="button"
-          onClick={() => setMode('notes')}
+          onClick={() => { playWaterDrop(); setMode('notes'); }}
           className={`relative z-10 flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 transition-colors duration-200 ${
             mode === 'notes'
               ? 'text-indigo-600 dark:text-cyan-300'

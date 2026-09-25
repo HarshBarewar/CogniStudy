@@ -30,9 +30,12 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isRetryi
   const hasDiagnostics = Boolean(error.details || error.rawPayload);
 
   return (
-    <div className="w-full max-w-2xl mx-auto my-8 p-6 sm:p-8 bg-white dark:bg-zinc-900 border border-rose-200/80 dark:border-rose-900/50 rounded-3xl shadow-card-subtle text-center animate-slide-up">
-      <div className="w-14 h-14 mx-auto mb-4 bg-rose-50 dark:bg-rose-950/50 rounded-2xl flex items-center justify-center text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/40 shadow-xs">
-        <AlertTriangle className="w-7 h-7" />
+    <div className="w-full max-w-2xl mx-auto my-8 p-6 sm:p-8 liquid-glass specular-card rounded-3xl shadow-liquid-card dark:shadow-liquid-card-dark text-center animate-slide-up relative z-10 backdrop-blur-2xl border border-rose-400/30 dark:border-rose-900/40 overflow-hidden">
+      {/* Background crimson caustic glow */}
+      <div className="pointer-events-none absolute -top-12 -right-12 w-48 h-48 bg-rose-500/15 rounded-full blur-3xl" />
+
+      <div className="w-16 h-16 mx-auto mb-4 liquid-glass rounded-2xl flex items-center justify-center text-rose-500 border border-rose-400/40 shadow-liquid-glow">
+        <AlertTriangle className="w-8 h-8 animate-pulse" />
       </div>
 
       <div className="mb-2">
@@ -45,7 +48,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isRetryi
         {error.title}
       </h3>
 
-      <p className="text-slate-600 dark:text-zinc-300 text-sm max-w-md mx-auto mb-6 leading-relaxed">
+      <p className="text-slate-700 dark:text-zinc-300 text-sm max-w-md mx-auto mb-6 leading-relaxed font-medium">
         {error.message}
       </p>
 
@@ -53,7 +56,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isRetryi
         <button
           onClick={onRetry}
           disabled={isRetrying}
-          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm rounded-2xl transition-all shadow-sm hover:shadow-glow-brand active:scale-[0.98] disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 hover:brightness-110 text-white font-bold text-xs sm:text-sm rounded-2xl transition-all shadow-liquid-glow active:scale-95 disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${isRetrying ? 'animate-spin' : ''}`} />
           <span>{isRetrying ? 'Retrying Generation...' : 'Retry Request'}</span>
@@ -62,7 +65,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry, isRetryi
 
       {/* Technical Diagnostics Accordion for Interview Review */}
       {hasDiagnostics && (
-        <div className="mt-8 pt-5 border-t border-slate-100 dark:border-zinc-800/80 text-left">
+        <div className="mt-8 pt-5 border-t border-white/20 dark:border-white/10 text-left">
           <button
             onClick={() => setShowDetails(!showDetails)}
             className="w-full flex items-center justify-between text-xs text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200 font-mono py-1 transition-colors"
