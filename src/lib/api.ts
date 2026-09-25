@@ -36,6 +36,7 @@ export async function generateStudyPackage(
       },
       body: JSON.stringify({
         prompt,
+        inputMode: options.inputMode || 'topic',
         chaosMode: chaosMode !== 'none' ? chaosMode : undefined,
         refinementContext,
       }),

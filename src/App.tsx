@@ -7,7 +7,7 @@ import {
   Sun, 
   BookOpen
 } from 'lucide-react';
-import { StudyPackage, AppError, ChaosMode } from './types/result';
+import { StudyPackage, AppError, ChaosMode, InputMode } from './types/result';
 import { generateStudyPackage } from './lib/api';
 import { PromptInput } from './components/PromptInput';
 import { ResultView } from './components/ResultView';
@@ -76,10 +76,12 @@ export const App: React.FC = () => {
     }
   }, [savedSessions]);
 
+  const [currentMode, setCurrentMode] = useState<InputMode>('topic');
+
   /**
    * Main Generation Handler
    */
-  const handleGenerate = useCallback(async (promptText: string, chaosMode: ChaosMode = 'none') => {
+  const handleGenerate = useCallback(async (promptText: string, mode: InputMode = 'topic', chaosMode: ChaosMode = 'none') => {
     // 1. Guard against stale responses: increment request counter
     const currentId = ++requestId.current;
     
@@ -93,9 +95,11 @@ export const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setCurrentPrompt(promptText);
+    setCurrentMode(mode);
 
     try {
       const response = await generateStudyPackage(promptText, {
+        inputMode: mode,
         chaosMode,
         signal: controller.signal,
       });
@@ -222,11 +226,11 @@ export const App: React.FC = () => {
     alert("Triggering Race Condition Test:\n1. Launching Slow Request (Takes ~8s)\n2. Immediately launching Fast Request (Takes ~0.5s)\n\nWatch console and UI: the fast request will render first, and when the slow one finishes 8 seconds later, it will be discarded!");
     
     // Request 1: Slow
-    handleGenerate("Request #1: Slow Background Notes", "slow");
+    handleGenerate("Request #1: Slow Background Notes", currentMode, "slow");
 
     // Request 2: Fast (fired 400ms later)
     setTimeout(() => {
-      handleGenerate("Request #2: Fast Override Topic", "none");
+      handleGenerate("Request #2: Fast Override Topic", currentMode, "none");
     }, 400);
   };
 
@@ -234,7 +238,7 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* Top Chaos Testing Bar for Interviewers */}
       <ChaosTestingBar
-        onTriggerChaos={(mode) => handleGenerate(currentPrompt || 'Sample topic for failure testing', mode)}
+        onTriggerChaos={(mode) => handleGenerate(currentPrompt || 'Sample topic for failure testing', currentMode, mode)}
         onTriggerRaceCondition={handleSimulateRaceCondition}
         isLoading={isLoading}
       />
@@ -304,9 +308,10 @@ export const App: React.FC = () => {
           </p>
 
           <PromptInput
-            onSubmit={(p) => handleGenerate(p, 'none')}
+            onSubmit={(p, m) => handleGenerate(p, m, 'none')}
             isLoading={isLoading}
             initialValue={currentPrompt}
+            initialMode={currentMode}
           />
         </section>
 
@@ -322,7 +327,7 @@ export const App: React.FC = () => {
         {error && !isLoading && (
           <ErrorState
             error={error}
-            onRetry={() => handleGenerate(currentPrompt, 'none')}
+            onRetry={() => handleGenerate(currentPrompt, currentMode, 'none')}
             isRetrying={isLoading}
           />
         )}

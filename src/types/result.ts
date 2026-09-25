@@ -59,7 +59,10 @@ export type ChaosMode =
   | 'slow'
   | 'server_error';
 
+export type InputMode = 'topic' | 'notes';
+
 export interface GenerateOptions {
+  inputMode?: InputMode;
   chaosMode?: ChaosMode;
   refinementContext?: {
     title: string;

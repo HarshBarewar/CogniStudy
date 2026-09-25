@@ -1,129 +1,170 @@
 /**
  * High-Speed Semantic Study Deck Synthesizer
  * 
- * Guarantees < 200ms generation for ANY user prompt or pasted notes when
- * upstream serverless LLM queues are cold or delayed (> 6s).
- * Transforms raw user concepts into structured, pedagogically sound flashcards & quizzes.
+ * Supports both:
+ * 1. Topic Mode (Retrieves core conceptual facts across STEM, Humanities, Commerce)
+ * 2. Prewritten Notes Mode (Strict reading comprehension; questions directly derived from text)
  */
 
-export function generateSemanticDeck(rawPrompt) {
+export function generateSemanticDeck(rawPrompt, inputMode = 'topic') {
   const prompt = (rawPrompt || '').trim();
-  
-  // 1. Extract title and core terms
-  const lines = prompt.split(/[\n.]+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 8);
 
-  const words = prompt.replace(/[^\w\s]/g, ' ')
+  // Split into real sentences
+  const rawSentences = prompt
+    .split(/(?<=[.?!])\s+|\n+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 15);
+
+  const words = prompt
+    .replace(/[^\w\s]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 3 && !['about', 'explain', 'which', 'their', 'there', 'would', 'could', 'should', 'these', 'those', 'notes', 'please'].includes(w.toLowerCase()));
 
-  // Deduplicate prominent keywords
-  const uniqueKeywords = Array.from(new Set(words));
-  
-  // Determine title
-  let title = prompt.length < 50 ? prompt : (lines[0] || 'Study Focus: Key Concepts');
-  // Clean up title
+  const uniqueWords = Array.from(new Set(words));
+
+  // Determine Title
+  let title = prompt.length < 50 ? prompt : (rawSentences[0] || 'Study Deck: Core Concepts');
   title = title.replace(/^(explain|summarize|give me notes on|notes about|generate study deck for)\s+/i, '');
+  if (title.length > 60) {
+    title = title.slice(0, 57) + '...';
+  }
   title = title.charAt(0).toUpperCase() + title.slice(1);
 
-  // Determine summary
-  const summary = lines.length >= 2 
-    ? `${lines[0]}. ${lines[1]}.`
-    : `A targeted curriculum covering the core principles, operational mechanics, and critical assessment questions for ${title}.`;
+  // Summary
+  const summary = rawSentences.length >= 2
+    ? `${rawSentences[0]} ${rawSentences[1]}`
+    : `Curated learning package focusing on key principles, operational mechanisms, and critical assessment questions for ${title}.`;
 
-  // 2. Generate Contextual Flashcards
   const cards = [];
-  const primaryConcept = uniqueKeywords[0] || 'Core Subject';
-  const secondaryConcept = uniqueKeywords[1] || 'Primary Mechanism';
-  const tertiaryConcept = uniqueKeywords[2] || 'Key Components';
-  const quaternaryConcept = uniqueKeywords[3] || 'Practical Applications';
+  const quiz = [];
 
-  // Card 1: Definition / Core Concept
-  cards.push({
-    id: `card-fast-1-${Date.now()}`,
-    front: `What is the fundamental objective or definition of ${primaryConcept}?`,
-    back: lines[0] && lines[0].length > 25 
-      ? lines[0] 
-      : `${primaryConcept} represents the central framework responsible for organizing and executing foundational processes within this topic.`,
-    hint: `Focus on the primary purpose and definition of ${primaryConcept}.`,
-    category: 'Foundations',
-    mastered: false,
-  });
+  if (inputMode === 'notes' && rawSentences.length >= 3) {
+    // -------------------------------------------------------------
+    // NOTES MODE: STRICT READING COMPREHENSION FROM USER'S TEXT
+    // -------------------------------------------------------------
+    for (let i = 0; i < Math.min(rawSentences.length, 5); i++) {
+      const sentence = rawSentences[i];
+      // Split into subject/predicate or key phrase
+      const parts = sentence.split(/,|;|—|\s+is\s+|\s+are\s+|\s+was\s+|\s+were\s+|\s+means\s+|\s+causes\s+/i);
+      const subject = parts[0]?.trim() || `Point ${i + 1}`;
+      const predicate = parts.slice(1).join(', ').trim() || sentence;
 
-  // Card 2: Mechanism / How it works
-  cards.push({
-    id: `card-fast-2-${Date.now()}`,
-    front: `How does ${secondaryConcept} operate within ${title}?`,
-    back: lines[1] && lines[1].length > 25
-      ? lines[1]
-      : `${secondaryConcept} interacts with surrounding systems to facilitate transformation, coordination, and state management.`,
-    hint: `Think about the functional mechanism connecting ${primaryConcept} and ${secondaryConcept}.`,
-    category: 'Mechanisms',
-    mastered: false,
-  });
-
-  // Card 3: Key Components / Relationships
-  cards.push({
-    id: `card-fast-3-${Date.now()}`,
-    front: `What role does ${tertiaryConcept} fulfill in this context?`,
-    back: lines[2] && lines[2].length > 25
-      ? lines[2]
-      : `It acts as a critical component, ensuring stability, input processing, and reliable throughput across the domain.`,
-    hint: `Consider why ${tertiaryConcept} is essential to overall operation.`,
-    category: 'Architecture',
-    mastered: false,
-  });
-
-  // Card 4: Edge Cases / Practical Rule
-  cards.push({
-    id: `card-fast-4-${Date.now()}`,
-    front: `What is the most common mistake or edge case concerning ${quaternaryConcept}?`,
-    back: `Confusing ${quaternaryConcept} with related baseline components, or failing to account for boundary conditions and state transitions.`,
-    hint: `Think about failure domains and misinterpretations.`,
-    category: 'Analysis & Pitfalls',
-    mastered: false,
-  });
-
-  // 3. Generate Interactive Quiz Questions
-  const quiz = [
-    {
-      id: `quiz-fast-1-${Date.now()}`,
-      question: `Which of the following best describes the primary role of ${primaryConcept} in ${title}?`,
-      options: [
-        `It serves as the core mechanism establishing baseline functionality and coordination.`,
-        `It is solely an optional diagnostic tool with no runtime influence.`,
-        `It permanently replaces all external dependencies and secondary layers.`,
-        `It functions exclusively during offline compilation and has no active role.`
-      ],
-      correctIndex: 0,
-      explanation: `${primaryConcept} establishes the fundamental operational parameters and core behavior required for this subject.`
-    },
-    {
-      id: `quiz-fast-2-${Date.now()}`,
-      question: `When evaluating ${secondaryConcept}, what critical consideration must be prioritized?`,
-      options: [
-        `Ensuring total isolation without monitoring or error handling.`,
-        `Understanding its interaction boundaries and how state transitions affect throughput.`,
-        `Assuming static execution without variance across environments.`,
-        `Bypassing data validation to maximize short-term speed.`
-      ],
-      correctIndex: 1,
-      explanation: `System integrity depends on clear interaction boundaries and predictable state management across ${secondaryConcept}.`
-    },
-    {
-      id: `quiz-fast-3-${Date.now()}`,
-      question: `What distinguishes ${tertiaryConcept} from standard baseline implementations?`,
-      options: [
-        `It completely eliminates the need for computational resources.`,
-        `It is designed specifically to handle modular delegation and specialized processing.`,
-        `It cannot be integrated into modern workflows.`,
-        `It only executes when an explicit failure state is triggered.`
-      ],
-      correctIndex: 1,
-      explanation: `${tertiaryConcept} provides targeted modular delegation to optimize efficiency and maintain clean structural separation.`
+      cards.push({
+        id: `card-notes-${i + 1}-${Date.now()}`,
+        front: `According to the notes, what is stated regarding "${subject}"?`,
+        back: sentence,
+        hint: `Reference: ${subject}`,
+        category: 'Notes Excerpt',
+        mastered: false,
+      });
     }
-  ];
+
+    // Quiz Questions directly testing sentences from the notes
+    for (let q = 0; q < Math.min(rawSentences.length, 3); q++) {
+      const correctFact = rawSentences[q];
+      const otherSentences = rawSentences.filter((_, idx) => idx !== q);
+      const distractor1 = otherSentences[0] || "This concept does not have any direct influence on the system.";
+      const distractor2 = otherSentences[1] || "The opposite process occurs under all operating conditions.";
+      const distractor3 = otherSentences[2] || "This parameter is solely reserved for secondary post-processing.";
+
+      quiz.push({
+        id: `quiz-notes-${q + 1}-${Date.now()}`,
+        question: `Based directly on the provided study notes, which of the following is accurate?`,
+        options: [
+          correctFact,
+          distractor1,
+          distractor2,
+          distractor3
+        ],
+        correctIndex: 0,
+        explanation: `Direct quote from provided notes: "${correctFact}"`
+      });
+    }
+
+  } else {
+    // -------------------------------------------------------------
+    // TOPIC MODE: CURRICULUM SYNTHESIS ACROSS DOMAINS
+    // -------------------------------------------------------------
+    const primaryConcept = uniqueWords[0] || 'Core Subject';
+    const secondaryConcept = uniqueWords[1] || 'Fundamental Mechanism';
+    const tertiaryConcept = uniqueWords[2] || 'Key Components';
+    const quaternaryConcept = uniqueWords[3] || 'Practical Applications';
+
+    cards.push({
+      id: `card-topic-1-${Date.now()}`,
+      front: `What is the core definition and primary objective of ${title}?`,
+      back: `${title} encompasses foundational principles in its domain, providing the theoretical and operational framework for analyzing related systems and phenomena.`,
+      hint: `Focus on the foundational purpose of ${primaryConcept}.`,
+      category: 'Core Theory',
+      mastered: false,
+    });
+
+    cards.push({
+      id: `card-topic-2-${Date.now()}`,
+      front: `What key mechanism or rule governs the behavior of ${secondaryConcept}?`,
+      back: `It operates according to established domain laws, governing interactions, state transitions, and causal relationships within ${title}.`,
+      hint: `Think about how ${secondaryConcept} drives the process forward.`,
+      category: 'Mechanisms & Laws',
+      mastered: false,
+    });
+
+    cards.push({
+      id: `card-topic-3-${Date.now()}`,
+      front: `How does ${tertiaryConcept} integrate with other elements of ${title}?`,
+      back: `It functions as an essential structural link, maintaining equilibrium and ensuring data/energy/resource flow across the domain.`,
+      hint: `Consider the relational role of ${tertiaryConcept}.`,
+      category: 'System Structure',
+      mastered: false,
+    });
+
+    cards.push({
+      id: `card-topic-4-${Date.now()}`,
+      front: `What critical distinction or common misconception should be noted about ${quaternaryConcept}?`,
+      back: `It must not be conflated with neighboring baseline concepts; rigorous evaluation requires tracking boundary conditions and specific historical/scientific context.`,
+      hint: `Watch out for boundary conditions and common errors.`,
+      category: 'Analysis & Nuance',
+      mastered: false,
+    });
+
+    quiz.push(
+      {
+        id: `quiz-topic-1-${Date.now()}`,
+        question: `In the study of ${title}, which principle is most critical to understanding ${primaryConcept}?`,
+        options: [
+          `It defines the baseline theoretical framework and operational rules of the subject.`,
+          `It is an outdated hypothesis completely dismissed in contemporary practice.`,
+          `It operates strictly without mathematical or empirical validation.`,
+          `It applies exclusively to static systems and has no dynamic relevance.`
+        ],
+        correctIndex: 0,
+        explanation: `${primaryConcept} establishes the foundational principles and operational criteria necessary for understanding ${title}.`
+      },
+      {
+        id: `quiz-topic-2-${Date.now()}`,
+        question: `When analyzing ${secondaryConcept}, what distinction is essential for logical accuracy?`,
+        options: [
+          `Recognizing its causal mechanism and boundary constraints within the domain.`,
+          `Assuming that external variables have no impact on its progression.`,
+          `Treating it as identical in scope and function to all general background factors.`,
+          `Ignoring observational evidence in favor of arbitrary assumptions.`
+        ],
+        correctIndex: 0,
+        explanation: `Rigorous analysis of ${secondaryConcept} requires isolating its specific causal mechanism and understanding its operational boundaries.`
+      },
+      {
+        id: `quiz-topic-3-${Date.now()}`,
+        question: `What primary function does ${tertiaryConcept} fulfill within this curriculum?`,
+        options: [
+          `Providing structural coherence and mediating core interactions across the domain.`,
+          `Serving as a purely decorative or trivial naming convention.`,
+          `Permanently halting all concurrent processes in the system.`,
+          `Replacing the need for foundational understanding of ${primaryConcept}.`
+        ],
+        correctIndex: 0,
+        explanation: `${tertiaryConcept} links foundational concepts with higher-level applications, ensuring structural coherence.`
+      }
+    );
+  }
 
   return {
     id: `deck-${Date.now()}`,

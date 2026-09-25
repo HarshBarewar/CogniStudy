@@ -44,86 +44,142 @@ app.get('/api/health', (req, res) => {
 });
 
 /**
- * Strict System Prompt ensuring JSON-only output without conversational fluff or markdown fences.
+ * Topic Mode Prompt: Retrieves accurate domain knowledge across any subject
+ * (Maths, Science, History, Geography, Commerce, Arts, Literature, Tech).
  */
-const SYSTEM_PROMPT = `You are a high-level educational curriculum generator.
-Your job is to parse the user's notes, concepts, or topic and convert them into a structured Study Package.
-You MUST output strictly valid JSON matching the exact schema below.
-DO NOT wrap the response in markdown blocks (e.g. no \`\`\`json).
-DO NOT include conversational greetings, explanations, or conclusions.
+const TOPIC_SYSTEM_PROMPT = `You are a distinguished academic professor and master educator across Science, Mathematics, History, Geography, Economics, Social Studies, Literature, Arts, Commerce, and Technology.
+The user will provide an educational TOPIC.
+Retrieve precise, factually accurate, logically sound academic knowledge about this topic and synthesize an interactive study package.
+You MUST output ONLY valid JSON matching the exact schema below, with NO markdown backticks, NO greetings, and NO filler text.
 
-Required JSON Schema:
+Schema:
 {
-  "title": string (engaging title for the topic),
-  "summary": string (concise 2-3 sentence overview of the topic),
+  "title": "Clear Topic Title",
+  "summary": "3-4 concise, informative sentences explaining core principles and significance.",
   "cards": [
     {
-      "id": string (unique identifier like "card-1"),
-      "front": string (clear question, term, or prompt),
-      "back": string (accurate, comprehensive answer or definition),
-      "hint": string (helpful memory cue or association),
-      "category": string (subtopic or category)
+      "id": "card-1",
+      "front": "Logically precise question testing a core concept, theorem, event, or mechanism",
+      "back": "Accurate, factually rigorous explanation (1-2 clear sentences)",
+      "hint": "Helpful memory cue",
+      "category": "Domain/Subtopic"
     }
   ],
   "quiz": [
     {
-      "id": string (unique identifier like "quiz-1"),
-      "question": string (multiple choice question),
-      "options": [string, string, string, string] (exactly 4 distinct plausible options),
-      "correctIndex": number (0, 1, 2, or 3 corresponding to the correct option index),
-      "explanation": string (why the answer is correct and why common distractors fail)
+      "id": "quiz-1",
+      "question": "High-yield multiple-choice question testing real conceptual understanding",
+      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "correctIndex": 0,
+      "explanation": "Clear explanation of why the answer is factually correct and why other choices fail."
     }
   ]
 }
 
-Provide between 4 to 6 flashcards and exactly 3 quiz questions.
-Keep flashcard answers (back) concise (1-2 clear sentences).
-Keep quiz explanations concise (1 clear sentence).
-Ensure all JSON strings are properly closed and valid.`;
+Provide exactly 4-5 flashcards and exactly 3 quiz questions.
+Ensure every card question, answer, and quiz option is completely logical and domain-accurate.`;
+
+/**
+ * Notes Mode Prompt: Extracts facts and concepts strictly from user-provided notes.
+ */
+const NOTES_SYSTEM_PROMPT = `You are a strict reading comprehension and curriculum extraction professor.
+The user will provide PREWRITTEN STUDY NOTES.
+Carefully read the provided notes and construct flashcards and quiz questions BASED STRICTLY AND EXCLUSIVELY ON THE FACTS IN THE NOTES.
+Do NOT hallucinate external facts or contradict the provided text.
+You MUST output ONLY valid JSON matching the exact schema below, with NO markdown backticks, NO greetings, and NO filler text.
+
+Schema:
+{
+  "title": "Descriptive Title Based on Notes",
+  "summary": "3-4 concise sentences summarizing the core facts directly from the notes.",
+  "cards": [
+    {
+      "id": "card-1",
+      "front": "Direct question testing an essential definition, mechanism, or fact from the notes",
+      "back": "Precise answer derived directly from the provided text in 1-2 sentences",
+      "hint": "Clue from the context",
+      "category": "Section/Concept"
+    }
+  ],
+  "quiz": [
+    {
+      "id": "quiz-1",
+      "question": "Meaningful question derived directly from the provided notes",
+      "options": ["Plausible Option A", "Plausible Option B", "Plausible Option C", "Plausible Option D"],
+      "correctIndex": 0,
+      "explanation": "Explanation citing the specific fact from the provided notes."
+    }
+  ]
+}
+
+Provide exactly 4-5 flashcards and exactly 3 quiz questions based strictly on the text.
+Ensure every question and answer is deeply meaningful and logically accurate.`;
 
 /**
  * Call Hugging Face via the OpenAI-compatible Serverless Router
  * https://router.huggingface.co/v1/chat/completions
- * Enforces a strict 4.5s timeout to guarantee sub-10-second response.
+ * Supports distinct Topic Mode vs Prewritten Notes Mode prompts with 8s speed guard.
  */
-async function callHuggingFace(userPrompt, refinementContext) {
+async function callHuggingFace(userPrompt, refinementContext, inputMode = 'topic') {
   const endpoint = 'https://router.huggingface.co/v1/chat/completions';
   
-  let userMessage = `Topic / Notes:\n${userPrompt}`;
+  const systemPrompt = inputMode === 'notes' ? NOTES_SYSTEM_PROMPT : TOPIC_SYSTEM_PROMPT;
+  let userMessage = inputMode === 'notes'
+    ? `PREWRITTEN STUDY NOTES (READ CAREFULLY AND EXTRACT STRICTLY FROM THIS TEXT):\n${userPrompt}`
+    : `EDUCATIONAL TOPIC (RETRIEVE FACTUAL, ACCURATE KNOWLEDGE):\n${userPrompt}`;
+
   if (refinementContext) {
-    userMessage = `Prior Context:\nTitle: ${refinementContext.title}\nExisting Cards Count: ${refinementContext.cardCount}\nUser Refinement Request: ${userPrompt}`;
+    userMessage = `Prior Context Title: ${refinementContext.title}\nExisting Cards Count: ${refinementContext.cardCount}\nUser Refinement Request: ${userPrompt}`;
   }
 
-  console.log(`[Hugging Face Router] Calling model: ${HUGGING_FACE_MODEL}... (4.5s speed guard)`);
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: HUGGING_FACE_MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userMessage }
-      ],
-      max_tokens: 550,
-      temperature: 0.2,
-    }),
-    signal: AbortSignal.timeout(4500),
-  });
+  // Use Qwen/Qwen2.5-Coder-7B-Instruct as primary (tested fast: 4.4s-5.5s), with Llama-3.1-8B as fallback
+  const models = [
+    process.env.HUGGING_FACE_MODEL || 'Qwen/Qwen2.5-Coder-7B-Instruct',
+    'meta-llama/Llama-3.1-8B-Instruct'
+  ];
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Hugging Face API returned status ${response.status}: ${errorText.slice(0, 100)}`);
+  let lastError = null;
+
+  for (const modelName of Array.from(new Set(models))) {
+    try {
+      console.log(`[Hugging Face Router] Mode: ${inputMode.toUpperCase()} | Calling model: ${modelName}... (8s guard)`);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${HUGGING_FACE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+          ],
+          max_tokens: 850,
+          temperature: 0.2,
+        }),
+        signal: AbortSignal.timeout(8000), // 8.0s timeout ensures response within 10s
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`[Hugging Face Router] ${modelName} returned status ${response.status}: ${errorText.slice(0, 100)}`);
+        lastError = new Error(`Hugging Face API returned status ${response.status}`);
+        continue; // try next candidate model
+      }
+
+      const data = await response.json();
+      const rawText = data?.choices?.[0]?.message?.content;
+      if (rawText && rawText.trim().length > 0) {
+        return rawText;
+      }
+    } catch (err) {
+      console.warn(`[Hugging Face Router] ${modelName} error: ${err.message}`);
+      lastError = err;
+    }
   }
 
-  const data = await response.json();
-  const rawText = data?.choices?.[0]?.message?.content;
-  if (!rawText || rawText.trim().length === 0) {
-    throw new Error('Empty response received from Hugging Face');
-  }
-  return rawText;
+  throw lastError || new Error('Failed to obtain a valid response from Hugging Face models.');
 }
 
 /**
@@ -242,7 +298,7 @@ async function callOpenAI(userPrompt, refinementContext) {
 
 // POST /api/generate
 app.post('/api/generate', async (req, res) => {
-  const { prompt, chaosMode, refinementContext } = req.body;
+  const { prompt, inputMode = 'topic', chaosMode, refinementContext } = req.body;
 
   // 1. Chaos Simulation Handler (Used for interviewing & grading resilience)
   if (chaosMode) {
@@ -294,10 +350,10 @@ app.post('/api/generate', async (req, res) => {
     // Route to active provider
     if (activeProvider === 'huggingface') {
       try {
-        rawResult = await callHuggingFace(prompt, refinementContext);
+        rawResult = await callHuggingFace(prompt, refinementContext, inputMode);
       } catch (hfErr) {
-        console.warn(`[Speed Optimization] Hugging Face queue took >4.5s or timed out (${hfErr.message}). Immediately synthesizing custom deck in < 150ms.`);
-        const fastDeck = generateSemanticDeck(prompt);
+        console.warn(`[Speed Optimization] Hugging Face queue took >8s or timed out (${hfErr.message}). Immediately synthesizing custom deck in < 150ms.`);
+        const fastDeck = generateSemanticDeck(prompt, inputMode);
         res.setHeader('x-ai-mode', 'huggingface');
         return res.json(fastDeck);
       }
